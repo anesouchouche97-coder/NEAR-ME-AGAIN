@@ -1,16 +1,16 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
 import { createPortal } from 'react-dom';
 import { GoogleGenAI, Modality } from "@google/genai";
+import { useAuth } from './AuthContext';
+import { AuthModal } from './AuthModal';
+import { MemoryGallery } from './MemoryGallery';
+import { saveMemory } from './memoryService';
 
-// Base64 encoded default images derived from the user's provided photo.
 const DEFAULT_USER_IMAGE_MIME_TYPE = 'image/jpeg';
-const DEFAULT_USER_IMAGE_DATA = '/9j/4AAQSkZJRgABAQEASABIAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIbGNtcwIQAABtbnRyUkdCIFhZWiAH4gADABQACQAOAB1hY3NwTVNGVAAAAABzYXdzY3RybAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWhhbmSdkQA9QICwPUB0LIGepS0o444sQ+9f+wAIBACH/-sAPwB6/8OAnP/7wDv8P2j/9oAjwB4/7YA+P/uAIv/7gCr/+4As//tANP/7gDb/+0A5P/uAPn/7wD//+8A/v//APz//wD5//8A+f//APr//wD8//8A/P//AP3//wD+//8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A//8A/gACAPMAAwD4AA8A/gATAP8AFgD/ABgA/wAbAP8AHgD/ACEA/wAjAP8AJgD/ACgA/wAqAP8ALQD/AC8A/wAyAP8ANQD/ADgA/wA7AP8APQD/AEAA/wBDAP8ARgD/AEkA/wBMAP8ATwD/AFIA/wBVAP8AWAD/AFsA/wBeAP8AYgD/AGUA/wBpAP8AbAD/AG8A/wByAP8AdgD/AHkA/wChAP8AiAD/AIkA/wCOAP8AkQD/AJQA/wCaAP8AnQD/AKAA/wCiAP8AowD/AKYA/wCoAP8AqwD/AK4A/wCtAP8AsQD/ALQA/wCyAP8AtQD/ALgA/wDAAP8AwwD/AMYA/wDJAP8AzAD/AM8A/wDQAP8A0gD/ANUA/wDXAP8A3AD/AN8A/wDiAP8A5QD/AOcA/wDoAP8A6gD/AOwA/wDtAP8A8AD/APMA/wD0AP8A9wD/APkA/wD8AP8BAAIBAgIFAQYCBwEIAQkBCgELAQwBDQEOAQ8BEAERARQBFQEWARYBFwEYARkBGgEbARwBHQEdAR8BJAEkASUBJwEnASgBKQEoASsBKwEtAS4BLwEwATEBMgEzATQBNQE3ATgBOQE6ATsBPgE/AUEBQQFDAUMBRQFHAUgBSQFKAUsBTAFNAVABUwFXAVgBWQFaAVsBXAFdAV4BYAFiAWQBZgFqAWsBbAFuAW8BcAFxAXMBdAF2AXcBeAF6AXsBfAF/AYMBhQGKAYoBjAGNAY8BkAGSAZQBlgGaAZwBnQGgAaIBpQGoAasBrAGtAbABswG5AbwBvQG/AcEBwwHHAsgCygLPAtAC0wLYAt8C4wLoAu8C9gMAAxEDFwMjAyYDMANNBE8EVwVQBVwFWAVbBVwFWwVaBV0GXAZlBm4GcgZ2BnoGfgaCBoYGiwaQBpgGoAaqBrAGsga4BsgG2AboBvQHDAcUBxwHJAcsBzAHPAdEB0wHWAdsB4AHjAeUB5wHoAegB6gHsAe4B8AHxAfMC9QL3AvkDAAMCAwMDBAMGAwYDBwMHAwgDCQMJBAkGCQYJBwkIDQgLCAwLDAwMDQwODA4MDw4NEA0QDRANEg0UDRUNDA0QDRUNEg0VDRYNFA0WDRcNGQ0bDRwNHQ0gDSUNIw0lDSYNJg0mDSgNKA0pDSsNLA0sDS0NLQ0uDS4NLw0wDTEPNA85DzsPPg9BD0QPRw9KD0wPTQ9RD1UPWw9hD2MPag9xD2kPaw9sD3QPdg95D3wPfw+CD4MPiQ+MD40Pkw+WD5gPmQ+dD58Ppw+qD6wPsQ+1D7cPuQ+7D78PwA/ED8cPyA/LD8wPzg/QD9EP1A/XD9gP2w/eD+AP4Q/jD+UP5w/qD+0P8A//AAD/AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//pdGNoASUVORKCYII=';
-// FIX: Define the missing `DEFAULT_USER_IMAGE_URL` constant.
+const DEFAULT_USER_IMAGE_DATA = '/9j/4AAQSkZJRgABAQEASABIAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIbGNtcwIQAABtbnRyUkdCIFhZWiAH4gADABQACQAOAB1hY3NwTVNGVAAAAABzYXdzY3RybAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWhhbmSdkQA9QICwPUB0LIGepS0o444sQ+9f+wAIBACH/-sAPwB6/8OAnP/7wDv8P2j/9oAjwB4/7YA+P/uAIv/7gCr/+4As//tANP/7gDb/+0A5P/uAPn/7wD//+8A/v//APz//wD5//8A+f//APr//wD8//8A/P//AP3//wD+//8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A//8A/gACAPMAAwD4AA8A/gATAP8AFgD/ABgA/wAbAP8AHgD/ACEA/wAjAP8AJgD/ACgA/wAqAP8ALQD/AC8A/wAyAP8ANQD/ADgA/wA7AP8APQD/AEAA/wBDAP8ARgD/AEkA/wBMAP8ATwD/AFIA/wBVAP8AWAD/AFsA/wBeAP8AYgD/AGUA/wBpAP8AbAD/AG8A/wByAP8AdgD/AHkA/wChAP8AiAD/AIkA/wCOAP8AkQD/AJQA/wCaAP8AnQD/AKAA/wCiAP8AowD/AKYA/wCoAP8AqwD/AK4A/wCtAP8AsQD/ALQA/wCyAP8AtQD/ALgA/wDAAP8AwwD/AMYA/wDJAP8AzAD/AM8A/wDQAP8A0gD/ANUA/wDXAP8A3AD/AN8A/wDiAP8A5QD/AOcA/wDoAP8A6gD/AOwA/wDtAP8A8AD/APMA/wD0AP8A9wD/APkA/wD8AP8BAAIBAgIFAQYCBwEIAQkBCgELAQwBDQEOAQ8BEAERARQBFQEWARYBFwEYARkBGgEbARwBHQEdAR8BJAEkASUBJwEnASgBKQEoASsBKwEtAS4BLwEwATEBMgEzATQBNQE3ATgBOQE6ATsBPgE/AUEBQQFDAUMBRQFHAUgBSQFKAUsBTAFNAVABUwFXAVgBWQFaAVsBXAFdAV4BYAFiAWQBZgFqAWsBbAFuAW8BcAFxAXMBdAF2AXcBeAF6AXsBfAF/AYMBhQGKAYoBjAGNAY8BkAGSAZQBlgGaAZwBnQGgAaIBpQGoAasBrAGtAbABswG5AbwBvQG/AcEBwwHHAsgCygLPAtAC0wLYAt8C4wLoAu8C9gMAAxEDFwMjAyYDMANNBE8EVwVQBVwFWAVbBVwFWwVaBV0GXAZlBm4GcgZ2BnoGfgaCBoYGiwaQBpgGoAaqBrAGsga4BsgG2AboBvQHDAcUBxwHJAcsBzAHPAdEB0wHWAdsB4AHjAeUB5wHoAegB6gHsAe4B8AHxAfMC9QL3AvkDAAMCAwMDBAMGAwYDBwMHAwgDCQMJBAkGCQYJBwkIDQgLCAwLDAwMDQwODA4MDw4NEA0QDRANEg0UDRUNDA0QDRUNEg0VDRYNFA0WDRcNGQ0bDRwNHQ0gDSUNIw0lDSYNJg0mDSgNKA0pDSsNLA0sDS0NLQ0uDS4NLw0wDTEPNA85DzsPPg9BD0QPRw9KD0wPTQ9RD1UPWw9hD2MPag9xD2kPaw9sD3QPdg95D3wPfw+CD4MPiQ+MD40Pkw+WD5gPmQ+dD58Ppw+qD6wPsQ+1D7cPuQ+7D78PwA/ED8cPyA/LD8wPzg/QD9EP1A/XD9gP2w/eD+AP4Q/jD+UP5w/qD+0P8A//AAD/AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//pdGNoASUVORKCYII=';
 const DEFAULT_USER_IMAGE_URL = `data:${DEFAULT_USER_IMAGE_MIME_TYPE};base64,${DEFAULT_USER_IMAGE_DATA}`;
 const DEFAULT_THEIR_IMAGE_MIME_TYPE = 'image/jpeg';
-const DEFAULT_THEIR_IMAGE_DATA = '/9j/4AAQSkZJRgABAQEASABIAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIbGNtcwIQAABtbnRyUkdCIFhZWiAH4gADABQACQAOAB1hY3NwTVNGVAAAAABzYXdzY3RybAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWhhbmSdkQA9QICwPUB0LIGepS0o444sQ+9f+wAIBACH/-sAPwB6/8OAnP/7wDv8P2j/9oAjwB4/7wA+P/uAIv/7gCr/+4As//tANP/7gDb/+0A5P/uAPn/7wD//+8A/v//APz//wD5//8A+f//APr//wD8//8A/P//AP3//wD+//8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A//8A/gACAPMAAwD4AA8A/gATAP8AFgD/ABgA/wAbAP8AHgD/ACEA/wAjAP8AJgD/ACgA/wAqAP8ALQD/AC8A/wAyAP8ANQD/ADgA/wA7AP8APQD/AEAA/wBDAP8ARgD/AEkA/wBMAP8ATwD/AFIA/wBVAP8AWAD/AFsA/wBeAP8AYgD/AGUA/wBpAP8AbAD/AG8A/wByAP8AdgD/AHkA/wChAP8AiAD/AIkA/wCOAP8AkQD/AJQA/wCaAP8AnQD/AKAA/wCiAP8AowD/AKYA/wCoAP8AqwD/AK4A/wCtAP8AsQD/ALQA/wCyAP8AtQD/ALgA/wDAAP8AwwD/AMYA/wDJAP8AzAD/AM8A/wDQAP8A0gD/ANUA/wDXAP8A3AD/AN8A/wDiAP8A5QD/AOcA/wDoAP8A6gD/AOwA/wDtAP8A8AD/APMA/wD0AP8A9wD/APkA/wD8AP8BAAIBAgIFAQYCBwEIAQkBCgELAQwBDQEOAQ8BEAERARQBFQEWARYBFwEYARkBGgEbARwBHQEdAR8BJAEkASUBJwEnASgBKQEoASsBKwEtAS4BLwEwATEBMgEzATQBNQE3ATgBOQE6ATsBPgE/AUEBQQFDAUMBRQFHAUgBSQFKAUsBTAFNAVABUwFXAVgBWQFaAVsBXAFdAV4BYAFiAWQBZgFqAWsBbAFuAW8BcAFxAXMBdAF2AXcBeAF6AXsBfAF/AYMBhQGKAYoBjAGNAY8BkAGSAZQBlgGaAZwBnQGgAaIBpQGoAasBrAGtAbABswG5AbwBvQG/AcEBwwHHAsgCygLPAtAC0wLYAt8C4wLoAu8C9gMAAxEDFwMjAyYDMANNBE8EVwVQBVwFWAVbBVwFWwVaBV0GXAZlBm4GcgZ2BnoGfgaCBoYGiwaQBpgGoAaqBrAGsga4BsgG2AboBvQHDAcUBxwHJAcsBzAHPAdEB0wHWAdsB4AHjAeUB5wHoAegB6gHsAe4B8AHxAfMC9QL3AvkDAAMCAwMDBAMGAwYDBwMHAwgDCQMJBAkGCQYJBwkIDQgLCAwLDAwMDQwODA4MDw4NEA0QDRANEg0UDRUNDA0QDRUNEg0VDRYNFA0WDRcNGQ0bDRwNHQ0gDSUNIw0lDSYNJg0mDSgNKA0pDSsNLA0sDS0NLQ0uDS4NLw0wDTEPNA85DzsPPg9BD0QPRw9KD0wPTQ9RD1UPWw9hD2MPag9xD2kPaw9sD3QPdg95D3wPfw+CD4MPiQ+MD40Pkw+WD5gPmQ+dD58Ppw+qD6wPsQ+1D7cPuQ+7D78PwA/ED8cPyA/LD8wPzg/QD9EP1A/XD9gP2w/eD+AP4Q/jD+UP5w/qD+0P8A//AAD/AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//pdGNoASUVhJQAAAABJRU5ErkJggg==';
+const DEFAULT_THEIR_IMAGE_DATA = '/9j/4AAQSkZJRgABAQEASABIAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIbGNtcwIQAABtbnRyUkdCIFhZWiAH4gADABQACQAOAB1hY3NwTVNGVAAAAABzYXdzY3RybAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWhhbmSdkQA9QICwPUB0LIGepS0o444sQ+9f+wAIBACH/-sAPwB6/8OAnP/7wDv8P2j/9oAjwB4/7wA+P/uAIv/7gCr/+4As//tANP/7gDb/+0A5P/uAPn/7wD//+8A/v//APz//wD5//8A+f//APr//wD8//8A/P//AP3//wD+//8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A//8A/gACAPMAAwD4AA8A/gATAP8AFgD/ABgA/wAbAP8AHgD/ACEA/wAjAP8AJgD/ACgA/wAqAP8ALQD/AC8A/wAyAP8ANQD/ADgA/wA7AP8APQD/AEAA/wBDAP8ARgD/AEkA/wBMAP8ATwD/AFIA/wBVAP8AWAD/AFsA/wBeAP8AYgD/AGUA/wBpAP8AbAD/AG8A/wByAP8AdgD/AHkA/wChAP8AiAD/AIkA/wCOAP8AkQD/AJQA/wCaAP8AnQD/AKAA/wCiAP8AowD/AKYA/wCoAP8AqwD/AK4A/wCtAP8AsQD/ALQA/wCyAP8AtQD/ALgA/wDAAP8AwwD/AMYA/wDJAP8AzAD/AM8A/wDQAP8A0gD/ANUA/wDXAP8A3AD/AN8A/wDiAP8A5QD/AOcA/wDoAP8A6gD/AOwA/wDtAP8A8AD/APMA/wD0AP8A9wD/APkA/wD8AP8BAAIBAgIFAQYCBwEIAQkBCgELAQwBDQEOAQ8BEAERARQBFQEWARYBFwEYARkBGgEbARwBHQEdAR8BJAEkASUBJwEnASgBKQEoASsBKwEtAS4BLwEwATEBMgEzATQBNQE3ATgBOQE6ATsBPgE/AUEBQQFDAUMBRQFHAUgBSQFKAUsBTAFNAVABUwFXAVgBWQFaAVsBXAFdAV4BYAFiAWQBZgFqAWsBbAFuAW8BcAFxAXMBdAF2AXcBeAF6AXsBfAF/AYMBhQGKAYoBjAGNAY8BkAGSAZQBlgGaAZwBnQGgAaIBpQGoAasBrAGtAbABswG5AbwBvQG/AcEBwwHHAsgCygLPAtAC0wLYAt8C4wLoAu8C9gMAAxEDFwMjAyYDMANNBE8EVwVQBVwFWAVbBVwFWwVaBV0GXAZlBm4GcgZ2BnoGfgaCBoYGiwaQBpgGoAaqBrAGsga4BsgG2AboBvQHDAcUBxwHJAcsBzAHPAdEB0wHWAdsB4AHjAeUB5wHoAegB6gHsAe4B8AHxAfMC9QL3AvkDAAMCAwMDBAMGAwYDBwMHAwgDCQMJBAkGCQYJBwkIDQgLCAwLDAwMDQwODA4MDw4NEA0QDRANEg0UDRUNDA0QDRUNEg0VDRYNFA0WDRcNGQ0bDRwNHQ0gDSUNIw0lDSYNJg0mDSgNKA0pDSsNLA0sDS0NLQ0uDS4NLw0wDTEPNA85DzsPPg9BD0QPRw9KD0wPTQ9RD1UPWw9hD2MPag9xD2kPaw9sD3QPdg95D3wPfw+CD4MPiQ+MD40Pkw+WD5gPmQ+dD58Ppw+qD6wPsQ+1D7cPuQ+7D78PwA/ED8cPyA/LD8wPzg/QD9EP1A/XD9gP2w/eD+AP4Q/jD+UP5w/qD+0P8A//AAD/AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//AP//pdGNoASUVhJQAAAABJRU5ErkJggg==';
 const DEFAULT_THEIR_IMAGE_URL = `data:${DEFAULT_THEIR_IMAGE_MIME_TYPE};base64,${DEFAULT_THEIR_IMAGE_DATA}`;
 
 const promptSuggestions = {
@@ -37,7 +37,7 @@ interface ImageState {
 interface ResultState {
     type: 'image' | 'video';
     url: string;
-    originalUrl?: string; // For images, to keep the unedited version
+    originalUrl?: string;
 }
 
 interface EditState {
@@ -49,50 +49,34 @@ interface EditState {
 
 interface FaceSelectionState {
     image: ImageState;
-    faces: any[]; // Array of detected face objects from FaceDetector API
+    faces: any[];
     setter: React.Dispatch<React.SetStateAction<ImageState | null>>;
-    label: string; // To display in the modal
+    label: string;
 }
 
-// Helper function to crop image based on face detection bounding box
 const cropImageToFace = (
     image: HTMLImageElement,
     box: DOMRectReadOnly,
     mimeType: string,
-    paddingFactor = 0.5 // 50% padding around the face
+    paddingFactor = 0.5
 ): Promise<ImageState> => {
     return new Promise((resolve) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Add padding
         const padX = box.width * paddingFactor;
         const padY = box.height * paddingFactor;
-
         const cropX = Math.max(0, box.x - padX);
         const cropY = Math.max(0, box.y - padY);
         const cropWidth = box.width + padX * 2;
         const cropHeight = box.height + padY * 2;
-
-        // Ensure crop dimensions are within image bounds
         const finalWidth = Math.min(cropWidth, image.width - cropX);
         const finalHeight = Math.min(cropHeight, image.height - cropY);
 
         canvas.width = finalWidth;
         canvas.height = finalHeight;
-
-        ctx.drawImage(
-            image,
-            cropX,
-            cropY,
-            finalWidth,
-            finalHeight,
-            0,
-            0,
-            finalWidth,
-            finalHeight
-        );
+        ctx.drawImage(image, cropX, cropY, finalWidth, finalHeight, 0, 0, finalWidth, finalHeight);
 
         const url = canvas.toDataURL(mimeType);
         const data = url.split(',')[1];
@@ -130,7 +114,6 @@ const FaceSelectionModal = ({ selectionState, onSelect, onCancel }: { selectionS
 
         const nativeWidth = imgRef.current.naturalWidth;
         const nativeHeight = imgRef.current.naturalHeight;
-
         const scaleX = imgDimensions.width / nativeWidth;
         const scaleY = imgDimensions.height / nativeHeight;
 
@@ -168,8 +151,8 @@ const FaceSelectionModal = ({ selectionState, onSelect, onCancel }: { selectionS
     );
 };
 
-
-const MainApplication = () => {
+export const MainApplication = () => {
+    const { user, signOut } = useAuth();
     const [userImage, setUserImage] = useState<ImageState | null>({
         url: DEFAULT_USER_IMAGE_URL,
         data: DEFAULT_USER_IMAGE_DATA,
@@ -187,6 +170,8 @@ const MainApplication = () => {
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<ResultState | null>(null);
     const [showTipsModal, setShowTipsModal] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showGallery, setShowGallery] = useState(false);
     const [editState, setEditState] = useState<EditState>({
         filter: 'none',
         brightness: 100,
@@ -198,6 +183,7 @@ const MainApplication = () => {
     const loadingIntervalRef = useRef<number | null>(null);
     const [isApiBlocked, setIsApiBlocked] = useState(false);
     const apiCooldownRef = useRef<number | null>(null);
+    const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
     useEffect(() => {
         return () => {
@@ -213,7 +199,6 @@ const MainApplication = () => {
     const handleFileSelect = async (file: File, setter: React.Dispatch<React.SetStateAction<ImageState | null>>, label: string) => {
         setError(null);
         if (!('FaceDetector' in window)) {
-            console.warn("FaceDetector API not supported. Falling back to using the full image.");
             const reader = new FileReader();
             reader.onloadend = () => {
                 const url = reader.result as string;
@@ -230,8 +215,7 @@ const MainApplication = () => {
 
         img.onload = async () => {
             try {
-                // @ts-ignore
-                const faceDetector = new window.FaceDetector();
+                const faceDetector = new (window as any).FaceDetector();
                 const faces = await faceDetector.detect(img);
 
                 const reader = new FileReader();
@@ -243,7 +227,6 @@ const MainApplication = () => {
 
                     if (faces.length === 0) {
                         setError(`No face was detected in the image for "${label}". Please upload a clearer, front-facing photo.`);
-                        // Optionally, still set the image for the user to see
                         setter(originalImageState);
                         return;
                     }
@@ -264,17 +247,15 @@ const MainApplication = () => {
 
             } catch (e) {
                 console.error("Face detection failed:", e);
-                setError("Face detection failed. The full image will be used.");
-                // Fallback to using the full image if detection fails
-                 const reader = new FileReader();
-                 reader.onloadend = () => {
-                     const url = reader.result as string;
-                     const data = url.split(',')[1];
-                     setter({ url, data, mimeType: file.type });
-                 };
-                 reader.readAsDataURL(file);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const url = reader.result as string;
+                    const data = url.split(',')[1];
+                    setter({ url, data, mimeType: file.type });
+                };
+                reader.readAsDataURL(file);
             } finally {
-                URL.revokeObjectURL(url); // Clean up object URL
+                URL.revokeObjectURL(url);
             }
         };
         img.onerror = () => {
@@ -282,7 +263,6 @@ const MainApplication = () => {
              setError("Could not load the selected image file.");
         }
     };
-
 
     const handleUserImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -295,18 +275,18 @@ const MainApplication = () => {
             handleFileSelect(e.target.files[0], setTheirImage, "Their Picture");
         }
     };
-    
+
     const handleSelectFace = async (box: DOMRectReadOnly) => {
         if (!faceSelection) return;
-    
+
         const { image, setter } = faceSelection;
         const img = new Image();
         img.src = image.url;
-    
+
         img.onload = async () => {
             const croppedImageState = await cropImageToFace(img, box, image.mimeType);
             setter(croppedImageState);
-            setFaceSelection(null); // Close modal
+            setFaceSelection(null);
         };
     };
 
@@ -339,9 +319,10 @@ const MainApplication = () => {
         setIsLoading(true);
         setResult(null);
         resetEdits();
+        setSaveStatus(null);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY || process.env.API_KEY });
             const imageCompositionPrompt = `Combine the people from these two separate images into a single, cohesive new image. The first image contains one person and the primary scene. The second image contains another person. Place the person from the second image naturally with the person from the first image. The final scene should be based on this description: "${prompt}". Ensure the final result looks like a single, real photograph containing both individuals.`;
 
             if (outputType === 'image') {
@@ -370,8 +351,7 @@ const MainApplication = () => {
                     throw new Error("The AI could not generate an image. Please try a different prompt.");
                 }
 
-            } else { // Video generation
-                // Step 1: Generate a combined base image first.
+            } else {
                 setLoadingMessage("Step 1/2: Creating the perfect scene...");
                 const imageModel = 'gemini-2.5-flash-image';
                 const imageParts = [
@@ -392,11 +372,10 @@ const MainApplication = () => {
                 if (!imagePart?.inlineData) {
                     throw new Error("The AI could not create the initial scene for the video. Please try a different prompt.");
                 }
-                
+
                 const combinedImageData = imagePart.inlineData.data;
                 const combinedImageMimeType = imagePart.inlineData.mimeType;
-                
-                // Step 2: Animate the combined image.
+
                 setLoadingMessage(videoLoadingMessages[0]);
                 let messageIndex = 1;
                 loadingIntervalRef.current = window.setInterval(() => {
@@ -424,7 +403,8 @@ const MainApplication = () => {
 
                 const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
                 if (downloadLink) {
-                    const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+                    const apiKey = import.meta.env.VITE_API_KEY || process.env.API_KEY;
+                    const response = await fetch(`${downloadLink}&key=${apiKey}`);
                     const videoBlob = await response.blob();
                     const videoUrl = URL.createObjectURL(videoBlob);
                     setResult({ type: 'video', url: videoUrl });
@@ -459,7 +439,7 @@ const MainApplication = () => {
             } else if (fullErrorString.includes("SAFETY")) {
                  userFriendlyMessage = "The request was blocked due to safety policies. Please modify your prompt and try again.";
             }
-            
+
             setError(userFriendlyMessage);
 
             if (isQuotaError) {
@@ -481,7 +461,7 @@ const MainApplication = () => {
             }
         }
     }, [userImage, theirImage, prompt, outputType]);
-    
+
     useEffect(() => {
         if (result?.type === 'image' && result.originalUrl && canvasRef.current) {
             const canvas = canvasRef.current;
@@ -506,13 +486,12 @@ const MainApplication = () => {
                     filterString += 'sepia(0.5) contrast(0.9) brightness(1.1) saturate(0.8) ';
                 }
                 filterString += `brightness(${editState.brightness}%)`;
-                
+
                 ctx.filter = filterString;
-                
                 ctx.drawImage(img, 0, 0);
 
                 if (editState.textOverlay) {
-                    ctx.filter = 'none'; 
+                    ctx.filter = 'none';
                     const fontSize = Math.max(24, Math.min(img.width / 20, img.height / 15));
                     ctx.font = `bold ${fontSize}px 'Montserrat', sans-serif`;
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -525,6 +504,34 @@ const MainApplication = () => {
             };
         }
     }, [result, editState]);
+
+    const handleSaveMemory = async () => {
+        if (!user) {
+            setShowAuthModal(true);
+            return;
+        }
+
+        if (!result) return;
+
+        setSaveStatus('Saving...');
+
+        const { success, error } = await saveMemory(
+            user.id,
+            editState.textOverlay || 'Untitled Memory',
+            prompt,
+            result.type,
+            result.url,
+            editState
+        );
+
+        if (success) {
+            setSaveStatus('Saved!');
+            setTimeout(() => setSaveStatus(null), 3000);
+        } else {
+            setSaveStatus(`Error: ${error}`);
+            setTimeout(() => setSaveStatus(null), 5000);
+        }
+    };
 
     const handleDownload = () => {
         if (result?.type === 'video') {
@@ -571,7 +578,7 @@ const MainApplication = () => {
             </div>
         </div>
     );
-    
+
     const TipsModal = ({ onClose }: { onClose: () => void }) => createPortal(
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -593,7 +600,7 @@ const MainApplication = () => {
         </div>,
         document.getElementById('modal-root')!
     );
-    
+
     const EditingPanel = () => (
         <div className="editing-panel">
             <h3>Edit & Refine Image</h3>
@@ -621,7 +628,7 @@ const MainApplication = () => {
                 <label htmlFor="warmth">Warmth: {editState.warmth}</label>
                 <input type="range" id="warmth" min="0" max="100" value={editState.warmth} onChange={e => setEditState(s => ({...s, warmth: parseInt(e.target.value)}))} />
             </div>
-            
+
             <div className="edit-section">
                 <label htmlFor="textOverlay">Text Overlay</label>
                 <input type="text" id="textOverlay" placeholder="e.g., Forever in my heart" value={editState.textOverlay} onChange={e => setEditState(s => ({...s, textOverlay: e.target.value}))} />
@@ -641,6 +648,8 @@ const MainApplication = () => {
     return (
         <div className="app-content">
             {showTipsModal && <TipsModal onClose={() => setShowTipsModal(false)} />}
+            {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+            {showGallery && <MemoryGallery onClose={() => setShowGallery(false)} />}
             {faceSelection && (
                 <FaceSelectionModal
                     selectionState={faceSelection}
@@ -649,8 +658,28 @@ const MainApplication = () => {
                 />
             )}
             <header>
-                <h1>Echoes of Connection</h1>
-                <p>Create, refine, and cherish poignant visual memories with a loved one.</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <h1>Echoes of Connection</h1>
+                        <p>Create, refine, and cherish poignant visual memories with a loved one.</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        {user ? (
+                            <>
+                                <button onClick={() => setShowGallery(true)} className="tips-btn">
+                                    My Memories
+                                </button>
+                                <button onClick={signOut} className="tips-btn">
+                                    Sign Out
+                                </button>
+                            </>
+                        ) : (
+                            <button onClick={() => setShowAuthModal(true)} className="tips-btn">
+                                Sign In
+                            </button>
+                        )}
+                    </div>
+                </div>
             </header>
             <main className="main-content">
                 <div className="form-column">
@@ -691,7 +720,7 @@ const MainApplication = () => {
                             {outputType === 'video' && <p>Video generation can take several minutes.</p>}
                         </div>
                     )}
-                    
+
                     {result && (
                         <div className="output-container">
                              <div className="output-content">
@@ -701,12 +730,17 @@ const MainApplication = () => {
                                     <video src={result.url} controls autoPlay loop playsInline />
                                 )}
                             </div>
-                            
+
                             {result.type === 'image' && <EditingPanel />}
 
-                            <button onClick={handleDownload} className="download-btn">
-                                Download {result.type.charAt(0).toUpperCase() + result.type.slice(1)}
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                                <button onClick={handleSaveMemory} className="download-btn" style={{ flex: 1 }}>
+                                    {saveStatus || (user ? 'Save to Gallery' : 'Sign In to Save')}
+                                </button>
+                                <button onClick={handleDownload} className="download-btn" style={{ flex: 1 }}>
+                                    Download {result.type.charAt(0).toUpperCase() + result.type.slice(1)}
+                                </button>
+                            </div>
                         </div>
                     )}
                     {!isLoading && !result && !error && <p>Your generated memory will appear here.</p>}
@@ -715,13 +749,3 @@ const MainApplication = () => {
         </div>
     );
 };
-
-import { AuthProvider } from './src/AuthContext';
-import { MainApplication as NewMainApplication } from './src/App';
-
-const root = ReactDOM.createRoot(document.getElementById('app-root')!);
-root.render(
-  <AuthProvider>
-    <NewMainApplication />
-  </AuthProvider>
-);
